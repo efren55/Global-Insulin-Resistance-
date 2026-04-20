@@ -1,7 +1,7 @@
 create database insulin;
 use insulin;
 show tables;
-#Creacion de tabla
+#MAKING THE TABLE
 create table health(
 	id int primary key,
     original_id int,
@@ -22,7 +22,7 @@ create table health(
     Heart_Risk varchar(50)
 );
 
-#Importar csv a workbench
+#IMPORTING CSV TO WORKBENCH 
 TRUNCATE TABLE health;
 LOAD DATA INFILE "C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/health_dataset.csv"
 INTO TABLE health
@@ -33,18 +33,18 @@ IGNORE 1 ROWS
 (id, Country, Year, Age, Gender, Age_group, HbA1c, HDL, LDL, TG, TG_HDL_Ratio, Fasting_Insulin, HOMA_IR, Diabetic, Insulin_Resistant, Heart_Risk)
 SET original_id = id; 
 
-###############ANALISIS DE LA DATABASE#########################
+###############DATABASE ANALYSIS#########################
 select * from health limit 100;
-#cantidad de registros
+#QUANTITY OF REGISTERS
 select 'Registros',count(*) from health;
 
-#valores nulos
+#NULL VALUES
 select 'Nulos',sum(country is null) as country,sum(year is null) as year, sum(age is null) as age,sum(gender is null) as gender,
 sum(age_group is null) as age_group,sum(hba1c is null) as hba1c,sum(hdl is null) as hdl,sum(tg is null) as tg,sum(tg_hdl_ratio is null) as tg_hdl_ratio,
 sum(fasting_insulin is null) as fastins_insulin,sum(homa_ir is null) as homa_ir,sum(diabetic is null) as diabetic,sum(insulin_resistant is null) as insulin_resistant,
 sum(heart_risk is null) as heart_risk from health;
 
-#valores unicos
+#UNIQUE VALUES
 select country,count(country) as valores from health group by country order by valores desc;
 select year,count(year) as valores from health group by year order by valores desc;
 select age,count(age) as valores from health group by age order by valores desc;
@@ -54,7 +54,7 @@ select heart_risk,count(heart_risk) as valores from health group by heart_risk o
 select diabetic,count(diabetic) as valores from health group by diabetic order by valores desc;
 select insulin_resistant,count(insulin_resistant) as valores from health group by insulin_resistant order by valores desc;
 
-#valores promedio de variables
+#AVERAGE VALUES OF THE DATASET
 with promedios as (
 	select 'age', round(avg(age),3) as average from health union all select 'hba1c',round(avg(HbA1c),3) from health union all select 'hdl',round(avg(hdl),3) from health union all
     select 'ldl',round(avg(ldl),3) from health union all select 'tg',round(avg(tg),3) from health union all select 'tg_hdl_ratio',round(avg(tg_hdl_ratio),3) from health union all
@@ -62,38 +62,33 @@ with promedios as (
 )
 select * from promedios;
 
+#WHICH COUNTRY HAD THE MOST DISEASES?
 with pais_problemas as (
 	select country,sum(diabetic) as diabetic,sum(insulin_resistant) as insulin_resistant,sum(if(heart_risk='High',1,0)) as heart_risk, 
     (sum(diabetic)+sum(insulin_resistant)+sum(if(heart_risk='High',1,0))) as total from health group by country
 )
-
 select * from pais_problemas;
 
-with pais_problemas2 as (
-	select country,sum(diabetic) as diabetic,sum(insulin_resistant) as insulin_resistant,sum(if(heart_risk='High',1,0)) as heart_risk from health group by country
-)
-select country,diabetic,insulin_resistant,heart_risk,(diabetic+insulin_resistant+heart_risk) as total from pais_problemas2 order by total desc;
 
-#Distribucion de sexos por pais
+#DISTRIBUTION OF SEXES PER COUNTRY
 with pais_sexo as(
 	select country, sum(if(gender='Male',1,0)) as Men, sum(if(gender='Female',1,0)) as Women from health group by country
 )
 select * from pais_sexo order by women desc;
 
-#Distribicion de edad por pais
+#DISTRIBUTION OF AGES PER COUNTRY
 with pais_edad as(
 	select country,round(avg(age),3) as edad from health group by country
 )
 select * from pais_edad order by edad desc;
 
-#Grupo de edad mas presente en cada pais
 with pais_grupo as(
 	select country,sum(if(age_group='Adult',1,0)) as Adult,sum(if(age_group='Elderly',1,0)) as Elderly, sum(if(age_group='Child',1,0)) as Child,
     sum(if(age_group='Teen',1,0)) as Teen,count(age_group) as total from health group by country
 )
 select * from pais_grupo;
 
-#Pais con mas registros por año
+#COUNTRY WITH THE MOST REGISTERS PER EACH YEAR
 with pais_año as(
 	select country,sum(if(year=2005,1,0)) as '2005',sum(if(year=2006,1,0)) as '2006',sum(if(year=2007,1,0)) as '2007',sum(if(year=2008,1,0)) as '2008',
     sum(if(year=2009,1,0)) as '2009',sum(if(year=2010,1,0)) as '2010',sum(if(year=2011,1,0)) as '2011',sum(if(year=2012,1,0)) as '2012',sum(if(year=2013,1,0)) as '2013',
@@ -103,35 +98,35 @@ with pais_año as(
 )
 select * from pais_año;
 
-#Distribucion de sexos por año
+#DISTRIBUTION OF SEXES PER EACH YEAR
 with año_sexo as(
 	select year,sum((case when gender='Male' then 1 else 0 end)) as male,sum((case when gender='Female' then 1 else 0 end)) as female,
     count(gender) as total from health group by year 
 )
 select * from año_sexo;
 
-#Distribucion de edad por año
+#DISTRIBUTION OF AGES PER EACH YEAR
 with año_edad as(
 	select year,round(avg(age),3) as promedio_edad, sum(case when age_group='Adult' then 1 else 0 end) as Adult, sum(case when age_group='Elderly' then 1 else 0 end) as Elderly,
     sum(case when age_group='Teen' then 1 else 0 end) as Teen,sum(case when age_group='Child' then 1 else 0 end) as Child from health group by year
 )
 select * from año_edad;
 
-#Problemas medicos por años
+#MEDICAL PROBLEMS PER EACH YEAR
 with año_enfermedad as (
 	select year, sum(Diabetic) as Diabetic,sum(insulin_resistant) as insulin_resistant,sum(case when heart_risk='Low' then 1 else 0 end) as heart_risk_Low,
     sum(case when heart_risk='Medium' then 1 else 0 end) as heart_risk_Medium,sum(case when heart_risk='High' then 1 else 0 end) as heart_risk_High from health group by year
 )
 select * from año_enfermedad;
 
-#Cuantos años en promedio tienen los sexos
+#AVERAGE AGE PER EACH YEAR
 with sexo_edad as(
 	select gender,round(avg(age),3) as promedio_edad,max(age) as edad_maxima,min(age) as edad_minima,sum(case when age_group='Adult' then 1 else 0 end) as Adult,
     sum(case when age_group='Elderly' then 1 else 0 end) as Elderly,sum(case when age_group='Teen' then 1 else 0 end) as Teen,sum(case when age_group='Child' then 1 else 0 end) as Child from health group by gender
 )
 select * from sexo_edad;
 
-#Edad con mas problemas 
+#DISEASE WITH MORE PROBLEMS
 with edad_enfermedades as(
 	select 'Diabetic',round(avg(age),3) as promedio_edad,sum(case when age_group='Adult' then 1 else 0 end) as Adult,
     sum(case when age_group='Elderly' then 1 else 0 end) as Elderly, sum(case when age_group='Teen' then 1 else 0 end) as Teen,
@@ -154,14 +149,14 @@ with edad_enfermedades as(
 )
 select * from edad_enfermedades;
 
-#Distribucion de enfermedades por sexo
+#DISTRIBUTION OF DISEASES PER SEX
 with sexo_enfermedad as(
 	select gender,sum(diabetic) as diabetes,sum(insulin_resistant) as insulin_resistant,sum(if(heart_risk='Low',1,0)) as heart_risk_low,
     sum(if(heart_risk='Medium',1,0)) as heart_risk_medium, sum(if(heart_risk='High',1,0)) as heart_risk_high from health group by gender
 )
 select * from sexo_enfermedad;
 
-#Que enfermedad tiene mas influencia sobre las demas 
+#DISEASE THAT HAS MORE INFLUENCE ON OTHERS
 with enfermedad as (
 	select 'Diabetic' as categoria,sum(diabetic) diabetic,sum(insulin_resistant) as insulin_resistant,sum(if(heart_risk='High',1,0)) as heart_risk_high from health where diabetic=1 union all
     select 'Insulin_resistant',sum(diabetic) as diabetic,sum(insulin_resistant) as insulin_resistant,sum(if(heart_risk='High',1,0)) as heart_risk_high from health where insulin_resistant=1 union all
