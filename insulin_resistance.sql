@@ -161,5 +161,11 @@ with sexo_enfermedad as(
 )
 select * from sexo_enfermedad;
 
-#
-
+#Que enfermedad tiene mas influencia sobre las demas 
+with enfermedad as (
+	select 'Diabetic' as categoria,sum(diabetic) diabetic,sum(insulin_resistant) as insulin_resistant,sum(if(heart_risk='High',1,0)) as heart_risk_high from health where diabetic=1 union all
+    select 'Insulin_resistant',sum(diabetic) as diabetic,sum(insulin_resistant) as insulin_resistant,sum(if(heart_risk='High',1,0)) as heart_risk_high from health where insulin_resistant=1 union all
+    select 'Heart_risk_high',sum(diabetic) as diabetic,sum(insulin_resistant) as insulin_resistant,sum(if(heart_risk='High',1,0)) as heart_risk_high from health where heart_risk='High'
+)
+select * from enfermedad;
+select sum(diabetic) as diabetic,sum(insulin_resistant) as insulin_resistant from health;
